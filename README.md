@@ -20,6 +20,12 @@ Think of it as turning "ask one assistant" into "convene a small panel of expert
 This guide assumes:
 
 - **Claude Code is already installed and working.** Setting that up is not covered here.
+- **An active account/subscription for each AI you want to use.** These tools don't run for free — each AI bills to its own account:
+  - **Claude** — a paid Claude plan (or Anthropic API access). Required; this is the AI that runs the show.
+  - **Codex** — an OpenAI/ChatGPT plan that includes Codex, or an OpenAI API key.
+  - **Gemini** — a Google account for the Gemini CLI, or a Gemini API key.
+
+  You can run with just Claude, but the real value — the cross-checking and debate — only happens when Codex and/or Gemini are signed in too. The sign-in steps in the guides won't succeed without an active account behind them.
 - **Node.js is installed** (a recent LTS version). The two extra AIs are small command-line tools you install with `npm`. If an install command later complains about your Node version, updating Node is the first thing to try.
 
 ## Setup — three steps
