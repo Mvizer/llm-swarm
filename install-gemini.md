@@ -1,71 +1,75 @@
-# Install the Gemini delegate
+# Step 2: Turn on the Gemini AI
 
-This is **step 2 of 3**. It puts the Google Gemini CLI on your machine, authenticates it, and installs the Claude Code plugin that the swarm drives. When you finish, Gemini is the second of the two cross-model reviewers the swarm can route work to.
+This is the second of three setup steps. Here you install Google's Gemini tool, sign in, and connect it to Claude Code. When you're done, Gemini is the second of the two extra AIs the swarm can bring in for a review.
 
-> **Baseline:** Claude Code is already installed and working, and you have completed [`install-codex.md`](./install-codex.md) (step 1).
+> Assumes Claude Code is installed and working, and that you've finished [Step 1 (Codex)](./install-codex.md).
 
 ---
 
-## A. Install the Gemini CLI
+## 1. Install the Gemini tool
 
-The Claude Code Gemini plugin is a thin driver — it shells out to the real **`gemini`** CLI, which must be installed and on your `PATH`. You need a current LTS **Node.js**; if the install below errors with an unsupported-engine / Node-version message, upgrade Node first.
+Gemini is a small command-line program. The Claude Code side is just a connector — the actual work happens in the `gemini` program, so it has to be installed first.
+
+Open a terminal and run:
 
 ```bash
 npm install -g @google/gemini-cli
 ```
 
-> Canonical source of truth for install + authentication, if anything here is out of date or your sign-in flow differs: the official package page at <https://www.npmjs.com/package/@google/gemini-cli> (it links to the upstream repo and auth docs). This guide was verified against CLI `0.42.0`.
-
-Verify:
+Check it worked:
 
 ```bash
 gemini --version
 ```
 
-You should see a version number (this guide was written against `0.42.0`; newer is fine).
+You should see a version number (this guide was tested with `0.42.0` — anything newer is fine too).
 
-> **PATH note.** The `gemini` command must be resolvable from a normal shell, because Claude Code launches the plugin as a child process and needs to find it. If `gemini --version` works in your terminal but the plugin later can't find it, your npm global bin directory isn't on the `PATH` Claude Code inherits. Find it with `npm config get prefix` and add the bin directory to your `PATH`, then restart your terminal and Claude Code.
+> **If a later step says it can't find `gemini`:** the program installed fine, but your computer doesn't know where to look for it yet. Run `npm config get prefix` to see where npm puts global tools, add that location to your system's `PATH`, then restart your terminal **and** Claude Code. This is a normal one-time computer setup thing, not specific to this project.
+>
+> If anything here ever looks out of date, the official page is the source of truth: <https://www.npmjs.com/package/@google/gemini-cli> — it links to Google's full instructions.
 
-## B. Authenticate the CLI
+## 2. Sign in
 
-Authentication is done **in the Gemini CLI itself**. The Claude Code plugin reuses these stored credentials — you do not authenticate separately inside Claude Code.
+You sign in once, inside the Gemini tool itself. Claude Code reuses that sign-in automatically — there's no separate login anywhere else.
 
-The Gemini CLI defaults to interactive mode. Launch it once and complete the sign-in prompt:
+The Gemini tool opens an interactive screen by default. Start it once:
 
 ```bash
 gemini
 ```
 
-On first run it walks you through authentication — pick a sign-in method when prompted: a Google account (opens a browser; the common path) or a Gemini API key. Once you've signed in, the credentials are stored and reused; exit the interactive session. If the prompts don't match this description (the CLI's first-run flow changes between versions), follow the auth section on the canonical package page linked above — the only thing the swarm requires is that a headless call (below) succeeds.
+The first time, it walks you through signing in — choose **sign in with Google** (opens your browser) or paste a Gemini API key, whichever you have. Once you're signed in, close it (type `/quit`, or press Ctrl+C).
 
-*API-key alternative:* set `GEMINI_API_KEY` in your environment before launching, and the CLI uses it instead of the browser sign-in.
-
-Confirm it worked with a non-interactive (headless) call — this both checks auth and warms the path the swarm uses:
+Quick check that sign-in worked — this asks Gemini a tiny question without opening the interactive screen:
 
 ```bash
 gemini -p "reply with: ok"
 ```
 
-If it returns a normal model reply (not an auth error), the CLI is authenticated.
+If it replies normally (not a sign-in error), you're set.
 
-## C. Install the Claude Code plugin
+> If the sign-in screen looks different from this description (it changes between versions), follow the sign-in section on the official page: <https://www.npmjs.com/package/@google/gemini-cli>. All the swarm needs is that the quick check above works.
 
-Inside Claude Code, add the plugin's marketplace and install it. Run these as slash commands in a Claude Code session:
+## 3. Connect Gemini to Claude Code
+
+Now hook Gemini into Claude Code. In a Claude Code session, type these two lines:
 
 ```
 /plugin marketplace add m-ghalib/gemini-plugin-cc
 /plugin install gemini@gemini-plugin-cc
 ```
 
-Then make it active in the running session:
+The first line tells Claude Code where to find the plugin; the second installs it. If it asks you to confirm, say yes.
+
+Then load it into the session you're in right now:
 
 ```
 /reload-plugins
 ```
 
-New Claude Code sessions started after this will have the plugin automatically — the `/reload-plugins` step is only needed to pick it up in the *current* session.
+You only need that last line for your current session — any new Claude Code session already has it.
 
-*Scripted / non-interactive alternative:* instead of the slash commands you can add this to your Claude Code `settings.json` and start a fresh session:
+*Prefer setting this up by editing config instead of typing commands? Add this to your Claude Code `settings.json` and start a fresh session:*
 
 ```json
 {
@@ -78,18 +82,12 @@ New Claude Code sessions started after this will have the plugin automatically �
 }
 ```
 
-## D. Verify
+## 4. Check it's working
 
-You don't need to test Gemini in isolation — the llm-swarm skill runs its own Gemini health probe (`setup --verify`) automatically every time it activates, and it will tell you clearly if Gemini is unreachable or unauthenticated. The definitive end-to-end check is running the swarm itself (see the README, step 3).
+You don't need to test Gemini on its own. The llm-swarm skill checks it automatically every time it runs and will say so clearly if Gemini is unreachable or not signed in. The real end-to-end test is running the swarm itself (README, step 3).
 
-A quick standalone sanity check, if you want one:
-
-```bash
-gemini -p "reply with: ok"
-```
-
-If that returns a normal reply and `gemini --version` works from your shell, Gemini is ready.
+If you'd like a quick sanity check anyway: `gemini -p "reply with: ok"` returns a normal reply, and `gemini --version` prints a version. If both do, Gemini is ready.
 
 ---
 
-**Next:** the llm-swarm v2 skill is already in this repository (step 3). See the [README](./README.md) to drop it in and run your first swarm.
+**Next:** the llm-swarm skill is already in this repository — head back to the [README](./README.md) for step 3 and your first review.

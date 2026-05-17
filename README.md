@@ -1,93 +1,81 @@
-# llm-swarm v2
+# llm-swarm
 
-A Claude Code **slash-command skill** that orchestrates a structured, cross-model adversarial review across Claude (orchestrator), OpenAI Codex, and Google Gemini. It routes a code / plan / decision audit to the right model(s), runs a multi-round adversarial debate on contested or high-stakes work, and reconciles the result — with hard guardrails against silently skipping review, fabricating delegate output, or draining your rate limits.
+**Get a real second and third opinion from AI — automatically.**
 
----
+When you ask an AI to review your code, sanity-check a plan, or tell you the best way to do something, you get *one* model's answer. That one model can be confidently wrong. It has blind spots. It might miss a security bug, or hand you its first idea as if it were the best idea — and you'd have no easy way to know any of that happened.
 
-## From zero to a working swarm — A to Z
+llm-swarm fixes that. It's an add-on for Claude Code that, instead of trusting a single AI, brings in **three** — Claude, OpenAI's Codex, and Google's Gemini. They each review the work independently, argue out the places they disagree, and you get back one reconciled answer. You catch the problems a single model would have sailed right past — and when the models genuinely disagree, it tells you honestly instead of giving you false confidence.
 
-**Baseline assumption:** Claude Code is already installed and working, and you have a **current LTS Node.js** available (the two delegates are CLI tools installed via `npm`). If an `npm install -g` step below fails with an "unsupported engine" / Node-version error, upgrade Node and retry — that is the first thing to rule out.
+Think of it as turning "ask one assistant" into "convene a small panel of experts that actually challenge each other."
 
-You set up the swarm by completing three things, in order:
+## When you'd reach for it
 
-| Step | What | Page |
-|------|------|------|
-| 1 | Install + authenticate the **Codex** delegate, install its Claude Code plugin | [`install-codex.md`](./install-codex.md) |
-| 2 | Install + authenticate the **Gemini** delegate, install its Claude Code plugin | [`install-gemini.md`](./install-gemini.md) |
-| 3 | Drop in the **llm-swarm v2 skill** (this repo's `llm-swarm_v2.md` + `llm-swarm_v2-references/`) and run it | *this README, below* |
+- **"Claude says this code is fine — is it *really*?"** Have Codex and Gemini check it too, and pressure-test the answer.
+- **"Is this the best approach, or just the first one the AI thought of?"** Get real alternatives with the trade-offs laid out.
+- **Right before you merge or ship something that matters.** A three-model review is much harder to fool than a single pass.
+- **"Am I missing anything here?"** Three models looking from different angles catch more than one looking alone.
 
-Each install page is self-contained: install the native CLI, authenticate **in that CLI** (the Claude Code plugin reuses those credentials), then install the plugin. Do step 1, then step 2, then step 3.
+## What you need before you start
 
----
+This guide assumes:
 
-## Step 3 — install the skill
+- **Claude Code is already installed and working.** Setting that up is not covered here.
+- **Node.js is installed** (a recent LTS version). The two extra AIs are small command-line tools you install with `npm`. If an install command later complains about your Node version, updating Node is the first thing to try.
 
-Copy the skill into your Claude Code commands directory (`~/.claude/commands/`; on Windows that is `%USERPROFILE%\.claude\commands\`):
+## Setup — three steps
+
+You'll switch on the two extra AIs, then drop in the skill itself. Do them in order:
+
+| Step | What you do | Guide |
+|------|-------------|-------|
+| 1 | Turn on the **Codex** AI — install it, sign in, connect it to Claude Code | [install-codex.md](./install-codex.md) |
+| 2 | Turn on the **Gemini** AI — install it, sign in, connect it to Claude Code | [install-gemini.md](./install-gemini.md) |
+| 3 | Add the llm-swarm skill itself | this page, just below |
+
+Each guide is short and self-contained. Finish step 1, then step 2, then come back here for step 3.
+
+### Step 3 — add the skill
+
+Copy the skill into Claude Code's commands folder:
+
+- **macOS / Linux:** `~/.claude/commands/`
+- **Windows:** `%USERPROFILE%\.claude\commands\`
+
+When you're done it should look like this:
 
 ```
-~/.claude/commands/
+.claude/commands/
   llm-swarm_v2.md
-  llm-swarm_v2-references/
-    p5b-protocol.md
-    fanout-protocol.md
-    bundle-tiers.md
-    lens-prompts.md
-    command-appendix.md
-    worked-examples.md
-    incident-provenance.md
+  llm-swarm_v2-references/      <- folder of supporting files
 ```
 
-> **The `llm-swarm_v2-references/` directory name is load-bearing.** The kernel resolves playbooks by that exact relative path. Renaming the file or the directory will break lazy playbook loading. If you rename the command file, keep the `<name>-references/` convention and update the kernel's playbook pointers (§7) accordingly.
->
-> The skill's invocation name comes from the YAML `name:` field in the frontmatter (`llm-swarm-v2`), not the filename. Claude Code surfaces it as a slash command — invoke it the way your Claude Code version exposes named skills (e.g. `/llm-swarm_v2`, or just ask for an "llm-swarm" review).
+Keep the `llm-swarm_v2.md` file and the `llm-swarm_v2-references` folder **together, with those exact names**. The skill looks for that folder by name, sitting right next to itself — rename either one and it won't find its own instructions.
 
-**Start a fresh Claude Code session** so the new command is picked up (user commands in `~/.claude/commands/` are loaded at session start; `/reload-plugins` is for *plugins* and will **not** pick up a hand-copied command). **Your first run is the real end-to-end test:** point the skill at something to review. On activation it runs its own Codex and Gemini health probes and tells you plainly if either delegate is unreachable or unauthenticated — so a clean first run confirms steps 1 and 2 as well. If it instead reports that a *playbook* file is missing, the `llm-swarm_v2-references/` directory isn't a sibling of `llm-swarm_v2.md` in the commands dir — fix the layout (the skill keeps working in a reduced-detail mode meanwhile, by design).
+Then **start a fresh Claude Code session** so it notices the new command. (A new session is what loads it; there's no separate reload step for a hand-added command like this.)
 
----
+That's the whole setup. Your very first run also doubles as the test: the skill automatically checks that Codex and Gemini are reachable and signed in, and says so plainly if either isn't — so if a real review runs cleanly, you know steps 1 and 2 worked too.
 
-## What it does
+## How to actually use it
 
-- **Routes** an audit/review/consultation request to Claude alone or across Claude + Codex + Gemini, based on stakes and scope.
-- **P5b adversarial debate:** a 6-round Concede/Defend/Tradeoff protocol between models, with cross-correlation and a separate judge round, so one model's blind spot doesn't become the answer.
-- **Fan-out review:** parallel lens-specialized sub-agents (security, correctness, performance, …) with synthesis, for large surfaces.
-- **Advisory mode:** handles "Claude is telling me X — is this really the best approach?" as a first-class decision-validation flow (reasoned recommendation with tradeoffs and flip-conditions), not a bug hunt.
-- **Self-healing by design:** transient delegate/connector faults (a hung background job, a dropped broker, a momentary auth lapse) are a first-class failure class in the kernel. The swarm detects them, never fabricates around them, and auto-recovers — retry, `--wait` fallback, switch delegate, or fall back to the always-available Claude reviewer pole — surfacing what happened instead of silently degrading. **You do not need to babysit the plugins.**
+You don't have to learn any commands or modes. Just say what you want in plain words, for example:
 
-## Architecture (lean core + lazy playbooks)
+- *"Use llm-swarm to review this branch before I merge."*
+- *"Get a second opinion on this file — anything I'm missing?"*
+- *"Claude recommended approach A. Swarm it and tell me if that's really the best call."*
 
-- `llm-swarm_v2.md` — the **always-loaded kernel**: the decision procedure plus the complete safety surface (Prime Directive, Gates A–E, Failure Algebra, Bundle Contract, Guardrail Register).
-- `llm-swarm_v2-references/` — **lazy playbooks**, read only when the kernel routes into them:
-  - `p5b-protocol.md` — the 6-round adversarial debate mechanics
-  - `fanout-protocol.md` — parallel lens fan-out + synthesis
-  - `bundle-tiers.md` — what context goes to a delegate at each tier
-  - `lens-prompts.md` — the per-lens reviewer prompts
-  - `command-appendix.md` — verified Codex/Gemini companion command contracts
-  - `worked-examples.md` — end-to-end routing examples
-  - `incident-provenance.md` — why each guardrail exists (not loaded at runtime; audit only)
+It decides on its own whether your question needs the full multi-model debate or a lighter check. You can always steer it — *"just a quick look"* or *"go deep, this is security-critical."*
 
-The kernel never branches on playbook prose; safety/judgment never lives in a lazy playbook by design.
+## Good to know
 
-## Usage
-
-Invoke the skill and point it at what you want audited. It handles both:
-
-- **Defect/quality review:** "swarm this", "review this branch before merge", "anything I'm missing in this module?", post-phase / pre-merge audits.
-- **Advisory / decision validation:** "Claude is recommending approach X — is that really the best way?", "should we use A or B here?".
-
-The kernel's Routing Procedure decides solo-Claude vs. cross-model and whether to trigger the P5b debate. You don't have to pick a mode; you *can* steer it ("just a quick read", "full adversarial pass", "this is security-sensitive").
-
-## Limitations
-
-- Cross-model value requires both delegates working. If one or both are down the skill still runs (Claude reviewer-pole floor) and **tells you** it's degraded rather than pretending otherwise — but a single-model read is not the same as a cross-model debate.
-- This repo ships the skill only. It does not bundle or manage the Codex/Gemini CLIs or plugins themselves; the install pages show you how to set those up.
-- Token/runtime cost scales with stakes: a full P5b + fan-out pass on a large surface is deliberately expensive. The kernel has mandatory check-ins for large fan-outs, but you are responsible for your own model/plan rate limits.
-- The `codex:codex-rescue` / `gemini:gemini-rescue` agents the swarm uses for substantial delegate work **ship with the Codex/Gemini plugins** — installing the plugins (steps 1–2) gives you these automatically; no extra step.
-- *(Genuinely optional)* Some flows additionally reference **superpowers** skills (`requesting-code-review`, `receiving-code-review`, `verification-before-completion`, `systematic-debugging`, `test-driven-development`) by name. The swarm degrades gracefully without superpowers installed.
+- The real value comes from all three AIs being available. If Codex or Gemini is down it still works using Claude alone — but it will **tell you** it's running in that reduced mode rather than pretend the cross-check happened.
+- A deep three-model review uses noticeably more of your AI usage than a single quick question. The skill checks in with you before the largest jobs, but keep an eye on your own plan limits.
+- It looks after itself. If a connection drops or a background job stalls, it retries, falls back, or switches AIs — and tells you what happened. You don't need to babysit it.
+- This repository is the skill only. It doesn't install or manage the Codex/Gemini tools for you; the two setup guides walk you through that.
 
 ## License
 
-See [`LICENSE`](./LICENSE). A license has **not** been chosen yet — the file is a placeholder. You must select a license and fill in the copyright holder before publishing or distributing.
+See [LICENSE](./LICENSE). A license has **not** been chosen yet — the file is a placeholder. Pick one and add your name before sharing this with anyone else.
 
-## Acknowledgements
+## Under the hood (optional — you don't need this to use it)
 
-The guardrail design (G1–G46) is an incident-driven hardening record: every rule exists because an earlier version got something wrong in practice. See `llm-swarm_v2-references/incident-provenance.md`.
+If you're curious: the skill is built as a small always-on core (the decision-making plus every safety rule) and a set of detailed playbooks it only opens when a particular review path actually needs them. That keeps it fast without cutting any corners on safety. Every safety rule in it exists because an earlier version got something wrong in real use — `llm-swarm_v2-references/incident-provenance.md` tells the story behind each one.

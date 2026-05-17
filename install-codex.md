@@ -1,75 +1,71 @@
-# Install the Codex delegate
+# Step 1: Turn on the Codex AI
 
-This is **step 1 of 3**. It puts the OpenAI Codex CLI on your machine, authenticates it, and installs the Claude Code plugin that the swarm drives. When you finish, Codex is one of the two cross-model reviewers the swarm can route work to.
+This is the first of three setup steps. Here you install OpenAI's Codex tool, sign in, and connect it to Claude Code. When you're done, Codex is one of the two extra AIs the swarm can bring in for a review.
 
-> **Baseline:** Claude Code is already installed and working. This page does *not* cover installing Claude Code.
+> Assumes Claude Code is already installed and working. That part isn't covered here.
 
 ---
 
-## A. Install the Codex CLI
+## 1. Install the Codex tool
 
-The Claude Code Codex plugin is a thin driver — it shells out to the real **`codex`** CLI, which must be installed and on your `PATH`. You need a current LTS **Node.js**; if the install below errors with an unsupported-engine / Node-version message, upgrade Node first.
+Codex is a small command-line program. The Claude Code side is just a connector — the actual work happens in the `codex` program, so it has to be installed first.
+
+Open a terminal and run:
 
 ```bash
 npm install -g @openai/codex
 ```
 
-> Canonical source of truth for install + authentication, if anything here is out of date or your environment differs: the official package page at <https://www.npmjs.com/package/@openai/codex> (it links to the upstream repo and docs). This guide was verified against CLI `0.130.0`.
-
-Verify:
+Check it worked:
 
 ```bash
 codex --version
 ```
 
-You should see a `codex-cli` version line (this guide was written against `0.130.0`; newer is fine).
+You should see a version number (this guide was tested with `0.130.0` — anything newer is fine too).
 
-> **PATH note.** The `codex` command must be resolvable from a normal shell — Claude Code launches the plugin as a child process and needs to find it. If `codex --version` works in your terminal but the plugin later can't find it, your npm global bin directory isn't on the `PATH` Claude Code inherits. Find it with `npm config get prefix` (the binary lives in `<prefix>/bin` on macOS/Linux, `<prefix>` on Windows) and add that directory to your `PATH`, then restart your terminal and Claude Code.
+> **If a later step says it can't find `codex`:** the program installed fine, but your computer doesn't know where to look for it yet. Run `npm config get prefix` to see where npm puts global tools, add that location to your system's `PATH`, then restart your terminal **and** Claude Code. This is a normal one-time computer setup thing, not specific to this project.
+>
+> If anything here ever looks out of date, the official page is the source of truth: <https://www.npmjs.com/package/@openai/codex> — it links to OpenAI's full instructions.
 
-## B. Authenticate the CLI
+## 2. Sign in
 
-Authentication is done **in the Codex CLI itself**. The Claude Code plugin reuses these stored credentials — you do not authenticate separately inside Claude Code.
-
-Sign in with your OpenAI / ChatGPT account (opens a browser):
+You sign in once, inside the Codex tool itself. Claude Code reuses that sign-in automatically — there's no separate login anywhere else.
 
 ```bash
 codex login
 ```
 
-Confirm it worked:
+This opens your browser to sign in with your OpenAI / ChatGPT account. When you're back, confirm it stuck:
 
 ```bash
 codex login status
 ```
 
-This should report that you are logged in.
+It should say you're logged in.
 
-*API-key alternative:* if you use an API key instead of an account, Codex reads it from stdin:
+*Using an API key instead of an account? Run `printenv OPENAI_API_KEY | codex login --with-api-key`. Either way works — the swarm only cares that `codex login status` is happy.*
 
-```bash
-printenv OPENAI_API_KEY | codex login --with-api-key
-```
+## 3. Connect Codex to Claude Code
 
-Either path is fine — the swarm only cares that `codex login status` is healthy.
-
-## C. Install the Claude Code plugin
-
-Inside Claude Code, add the plugin's marketplace and install it. Run these as slash commands in a Claude Code session:
+Now hook Codex into Claude Code. In a Claude Code session, type these two lines:
 
 ```
 /plugin marketplace add openai/codex-plugin-cc
 /plugin install codex@openai-codex
 ```
 
-Then make it active in the running session:
+The first line tells Claude Code where to find the plugin; the second installs it. If it asks you to confirm, say yes.
+
+Then load it into the session you're in right now:
 
 ```
 /reload-plugins
 ```
 
-New Claude Code sessions started after this will have the plugin automatically — the `/reload-plugins` step is only needed to pick it up in the *current* session.
+You only need that last line for your current session — any new Claude Code session already has it.
 
-*Scripted / non-interactive alternative:* instead of the slash commands you can add this to your Claude Code `settings.json` and start a fresh session:
+*Prefer setting this up by editing config instead of typing commands? Add this to your Claude Code `settings.json` and start a fresh session:*
 
 ```json
 {
@@ -82,18 +78,12 @@ New Claude Code sessions started after this will have the plugin automatically �
 }
 ```
 
-## D. Verify
+## 4. Check it's working
 
-You don't need to test Codex in isolation — the llm-swarm skill runs its own Codex health probe (`setup`) automatically every time it activates, and it will tell you clearly if Codex is unreachable or unauthenticated. The definitive end-to-end check is running the swarm itself (see the README, step 3).
+You don't need to test Codex on its own. The llm-swarm skill checks it automatically every time it runs and will say so clearly if Codex is unreachable or not signed in. The real end-to-end test is running the swarm itself (README, step 3).
 
-A quick standalone sanity check, if you want one:
-
-```bash
-codex login status
-```
-
-If that is healthy and `codex --version` works from your shell, Codex is ready.
+If you'd like a quick sanity check anyway: `codex login status` says you're logged in, and `codex --version` prints a version. If both do, Codex is ready.
 
 ---
 
-**Next:** [`install-gemini.md`](./install-gemini.md) — step 2 of 3.
+**Next: [Step 2 — turn on the Gemini AI](./install-gemini.md).**
