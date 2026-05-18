@@ -55,11 +55,13 @@ If it replies normally (not a sign-in error), you're set.
 Now hook Gemini into Claude Code. In a Claude Code session, type these two lines:
 
 ```
-/plugin marketplace add m-ghalib/gemini-plugin-cc
+/plugin marketplace add Mvizer/gemini-plugin-cc
 /plugin install gemini@gemini-plugin-cc
 ```
 
 The first line tells Claude Code where to find the plugin; the second installs it. If it asks you to confirm, say yes.
+
+> **Note — this points at a private, audited copy.** `Mvizer/gemini-plugin-cc` is a private copy of the open-source `m-ghalib/gemini-plugin-cc` (Apache-2.0), kept so the setup doesn't depend on a third-party repo that could change. Because it's **private**, only a GitHub account with access (currently just the owner) can install it with the line above. Setting this up on your own machine with that account: you're fine. If this guide was shared with you and that line fails with a "not found"/access error, the repo hasn't been made public yet — ask the owner to flip it public.
 
 Then load it into the session you're in right now:
 
@@ -74,7 +76,7 @@ You only need that last line for your current session — any new Claude Code se
 ```json
 {
   "extraKnownMarketplaces": {
-    "gemini-plugin-cc": { "source": { "source": "github", "repo": "m-ghalib/gemini-plugin-cc" } }
+    "gemini-plugin-cc": { "source": { "source": "github", "repo": "Mvizer/gemini-plugin-cc" } }
   },
   "enabledPlugins": {
     "gemini@gemini-plugin-cc": true
