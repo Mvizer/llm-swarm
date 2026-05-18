@@ -63,13 +63,31 @@ That's the whole setup. Your very first run also doubles as the test: the skill 
 
 ## How to actually use it
 
-You don't have to learn any commands or modes. Just say what you want in plain words, for example:
+You don't learn any commands or modes — just describe what you want in plain words. There are two ways people use it. It works out which one you mean, but knowing the difference is how you get real value out of it.
 
+### 1. Reviewing code — *"find the problems"*
+
+For when code already exists and you want a hard second look: bugs, security holes, edge cases, anything that'll break. Good before a merge or a release.
+
+Say something like:
 - *"Use llm-swarm to review this branch before I merge."*
-- *"Get a second opinion on this file — anything I'm missing?"*
-- *"Claude recommended approach A. Swarm it and tell me if that's really the best call."*
+- *"Check this file for security issues — anything I'm missing?"*
 
-It decides on its own whether your question needs the full multi-model debate or a lighter check. You can always steer it — *"just a quick look"* or *"go deep, this is security-critical."*
+**To get the most out of it:** point it at the specific code (a branch, a file, a diff) **and say what you're worried about**. *"I'm not sure the token-refresh logic is safe"* gives all three AIs a sharper target than *"review this"* — and sharper targets find more.
+
+### 2. Getting advice — *"is this the right call?"*
+
+For when you're deciding *how* to do something, not checking code that exists yet: comparing approaches, or pressure-testing a recommendation — including one Claude just gave you.
+
+Say something like:
+- *"Claude says I should use approach A. Is that really best, or is there something better?"*
+- *"Should I do X or Y here? Have the models weigh in."*
+
+**To get the most out of it:** give it the decision **and the context** — what you're choosing between, plus the constraints that actually matter (performance target, deadline, team size, must-not-break). With that, you get a reasoned recommendation with trade-offs and *"change the answer if…"* conditions — not a pile of nitpicks.
+
+---
+
+Either way, you can steer the depth: *"just a quick look"* for a fast read, or *"go deep, this is security-critical"* for the full three-model debate.
 
 ## Good to know
 
