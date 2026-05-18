@@ -1,6 +1,6 @@
 # Playbook — P5b Protocol (mechanics only)
 
-> **Kernel still governs.** Gates A–E (§3) and the Failure Algebra (§4) of `llm-swarm_v2.md` remain in force on every round here. This file adds *how the rounds run*; it owns no judgment and no safety rule. If anything here seems to conflict with a kernel Gate, the Gate wins.
+> **Kernel still governs.** Gates A–E (§3) and the Failure Algebra (§4) of `llm-swarm.md` remain in force on every round here. This file adds *how the rounds run*; it owns no judgment and no safety rule. If anything here seems to conflict with a kernel Gate, the Gate wins.
 
 P5b is a six-round core adversarial debate plus two conditional sub-rounds. Sequence: **1 → 2 → (2.5 if ≥2 reviewers fresh-reviewed) → 3 → (3.5 if ≤3 follow-ups warranted) → 4 → 5 → 6**.
 

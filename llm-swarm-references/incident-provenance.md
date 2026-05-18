@@ -1,8 +1,8 @@
 # Provenance — why each guardrail exists (G1–G46)
 
-> **Not required for operation.** The kernel never branches on this file. It is the rationale record so a future maintainer changing a Gn knows what it cost to learn. Authoritative behavior lives in the kernel (`llm-swarm_v2.md` §1–§5) and playbooks; this is the "why" only. Read it when auditing a guardrail or deciding whether a rule is safe to change.
+> **Not required for operation.** The kernel never branches on this file. It is the rationale record so a future maintainer changing a Gn knows what it cost to learn. Authoritative behavior lives in the kernel (`llm-swarm.md` §1–§5) and playbooks; this is the "why" only. Read it when auditing a guardrail or deciding whether a rule is safe to change.
 
-Every entry below corresponds to a real mistake, hallucination, misalignment, or drift class observed while operating an earlier version of this orchestrator. v2 reproduces the *behavior*; this records the *lesson*.
+Every entry below corresponds to a real mistake, hallucination, misalignment, or drift class observed while operating this orchestrator in practice. The skill reproduces the *behavior*; this records the *lesson*.
 
 | G | Defends against | Incident / lesson |
 |---|---|---|
@@ -53,4 +53,4 @@ Every entry below corresponds to a real mistake, hallucination, misalignment, or
 | G45 | Theorizing past the evidence; false "decisive" tests; mis-attributing layers; verifying on a proxy not the real path | Same incident: env/state-root/stdio hypotheses were all wrong turns disproven by evidence; the probe "worked" only because it sidestepped the real path. Codified so the next session does not re-chase them. |
 | G46 | A consultation / decision-validation request mis-handled as a defect hunt — bug-list output, under-contexted delegates, wrong question answered | A design audit found triggers + user-escalation were covered but the *middle* was not — bundles were code-centric, all delegate/lens prompts F-ID-shaped, round structure assumed an artifact. Added a first-class Advisory mode (decision-payload bundle + reasoned-recommendation output + proposal-as-R1 flow). |
 
-**Drop-risk order (hardest/most-likely-repeated first):** G1, G3, G7, G4, G2, G20, G24, G10/G11, G5, G14. A v2 that fails any of these silently has repeated a known production incident.
+**Drop-risk order (hardest/most-likely-repeated first):** G1, G3, G7, G4, G2, G20, G24, G10/G11, G5, G14. Any implementation that fails any of these silently has repeated a known production incident.

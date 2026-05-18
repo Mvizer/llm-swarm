@@ -1,6 +1,6 @@
 # Playbook — Tier-4 Fan-out (mechanics only)
 
-> **Kernel still governs.** Gates A–E (§3) and the Failure Algebra (§4) of `llm-swarm_v2.md` remain in force. This file adds *how a large phase review shards and synthesizes*; it owns no judgment and no safety rule.
+> **Kernel still governs.** Gates A–E (§3) and the Failure Algebra (§4) of `llm-swarm.md` remain in force. This file adds *how a large phase review shards and synthesizes*; it owns no judgment and no safety rule.
 
 Fan-out is Round 2 for a Tier-4 phase review: multiple specialized lens sub-agents fired in parallel, then synthesized. It exists because some defect classes (a systemic pattern repeated across modules) are invisible to any single-agent review — only fan-out + synthesis can catch them.
 

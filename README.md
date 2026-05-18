@@ -51,11 +51,11 @@ When you're done it should look like this:
 
 ```
 .claude/commands/
-  llm-swarm_v2.md
-  llm-swarm_v2-references/      <- folder of supporting files
+  llm-swarm.md
+  llm-swarm-references/      <- folder of supporting files
 ```
 
-Keep the `llm-swarm_v2.md` file and the `llm-swarm_v2-references` folder **together, with those exact names**. The skill looks for that folder by name, sitting right next to itself — rename either one and it won't find its own instructions.
+Keep the `llm-swarm.md` file and the `llm-swarm-references` folder **together, with those exact names**. The skill looks for that folder by name, sitting right next to itself — rename either one and it won't find its own instructions.
 
 Then **start a fresh Claude Code session** so it notices the new command. (A new session is what loads it; there's no separate reload step for a hand-added command like this.)
 
@@ -84,4 +84,4 @@ See [LICENSE](./LICENSE). A license has **not** been chosen yet — the file is 
 
 ## Under the hood (optional — you don't need this to use it)
 
-If you're curious: the skill is built as a small always-on core (the decision-making plus every safety rule) and a set of detailed playbooks it only opens when a particular review path actually needs them. That keeps it fast without cutting any corners on safety. Every safety rule in it exists because an earlier version got something wrong in real use — `llm-swarm_v2-references/incident-provenance.md` tells the story behind each one.
+If you're curious: the skill is built as a small always-on core (the decision-making plus every safety rule) and a set of detailed playbooks it only opens when a particular review path actually needs them. That keeps it fast without cutting any corners on safety. Every safety rule in it exists because an earlier version got something wrong in real use — `llm-swarm-references/incident-provenance.md` tells the story behind each one.

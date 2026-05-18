@@ -1,13 +1,13 @@
 ---
-name: llm-swarm-v2
+name: llm-swarm
 description: Use when the user asks for a thorough audit/review/critique of code, a plan, or a decision — explicit ("swarm this", "orchestrate across models", "use llm-swarm") or implicit (investigate / examine / dig into / "is this any good?" / "anything I'm missing?" / verify / double-check / sanity-check / post-phase or pre-merge review of non-trivial work). Routes work across Claude (orchestrator), Codex, and Gemini and runs a structured cross-model adversarial debate on contested or high-stakes work.
 ---
 
-# llm-swarm v2 — Kernel
+# llm-swarm — Kernel
 
 This file is the **always-loaded kernel**: the decision procedure and the complete safety surface. The mechanics of how each flow actually runs live in **lazy playbooks** (see §7) that you Read only when the kernel routes you into them.
 
-**v2 is a ground-up re-architecture, not a reorganization of v1.** It replaces v1's incident-patched topic-prose playbook with: a deterministic Routing Procedure, invariant **Gates** expressed as preconditions, a formal **Failure Algebra** that is round-agnostic *by construction*, one first-class **Bundle Contract**, and a machine-auditable **Guardrail Register**. The behaviors it must reproduce are catalogued as G1–G46 (`llm-swarm_v2-references/incident-provenance.md`); each one is a real first-hand incident, and §6 maps every Gn to where it is enforced.
+**This skill is a deterministic decision procedure, not incident-patched prose.** Its design: a deterministic Routing Procedure, invariant **Gates** expressed as preconditions, a formal **Failure Algebra** that is round-agnostic *by construction*, one first-class **Bundle Contract**, and a machine-auditable **Guardrail Register**. The behaviors it must reproduce are catalogued as G1–G46 (`llm-swarm-references/incident-provenance.md`); each one is a real first-hand incident, and §6 maps every Gn to where it is enforced.
 
 ---
 
@@ -127,7 +127,7 @@ These are the highest-drop-risk rules in the system; they live entirely in the k
 
 ## §4 — Failure Algebra (round-agnostic *by construction*)
 
-v1 had a Round-2 escalation ladder that was later patched to be "round-agnostic". v2 removes the patch surface entirely: recovery is a **function of `(round, failure-class)`**, so there is no "Round 2 only" scope and no improvise-by-analogy gap for Round 4 / Round 6 / Round 3.5.
+Recovery is a **function of `(round, failure-class)`** by construction — there is no "Round 2 only" scope and no improvise-by-analogy gap for Round 4 / Round 6 / Round 3.5. A round-scoped escalation ladder is exactly the patch surface this design eliminates.
 
 **Failure classes:** `HANG` (log frozen past the Tier A4 cap, or `Queued for background execution.` then silence > 90s) · `HARD-FAIL` (explicit error in `status`/stdout) · `GARBAGE` (empty/unusable output) · `AUTH` (handled in §1.4 + GATE-C) · `INTERRUPT` (user course-correction / scope change / "stop swarming") · `CONNECTOR` (plugin/job-machinery fault beneath the skill — see below).
 
@@ -155,7 +155,7 @@ v1 had a Round-2 escalation ladder that was later patched to be "round-agnostic"
 **Degraded modes (recap, authoritative here):** both → full P5b · codex-only → Claude judges Round 4 (told to user) · gemini-only → symmetric · neither → Claude orchestrator + Claude reviewer pole (Mechanism C / Lens F), cross-model layer explicitly absent, **Lens F still dispatched**. [G12, G21]
 
 **`CONNECTOR` faults — plugin/job-machinery layer, beneath the skill, version-independent. [G44]** Symptoms: a job stuck at `Queued for background execution.` > 90s with no worker progress; `cancel` that doesn't take; `setup --verify` healthy yet `--background` jobs never run; broker-pipe errors (`cxc-*`/`gcc-*`/ENOENT); a worker spawned but already dead. These are **not** model/review failures and **not** (by themselves) fabrications — the `R(round,class)` delegate-switch ladder does **not** apply (the other delegate's connector likely shares the same bug; switching just moves the failure). Procedure:
-1. **Name the layer first.** Connector vs model: if `setup --verify` is healthy **and** a foreground/`--wait` call works **but** `--background` doesn't → connector, not model. A connector fault hits every model path and every swarm version (v1 and v2) identically — it cannot be fixed by routing.
+1. **Name the layer first.** Connector vs model: if `setup --verify` is healthy **and** a foreground/`--wait` call works **but** `--background` doesn't → connector, not model. A connector fault hits every model path identically — it cannot be fixed by routing.
 2. **Do not fabricate or re-route on a story.** Symptoms overlap the GATE-A watchlist; this is a *real* failure but "fall back to the other model per memory" is exactly the fabrication pattern. Apply GATE-A + GATE-C: probe in the **target cwd**, capture the literal evidence *before* asserting anything.
 3. **Surface the hidden error before theorizing.** Silent paths (`stdio:"ignore"`, swallowed throws) emit nothing — *that silence IS the signal, not an absence of one*. Capture the actual failing output (job log, per-job worker log if present, `status --json`, probe JSON) before forming or acting on any root-cause hypothesis. Reproduce minimally and **change one variable per experiment** — a test that varies two proves nothing and breeds false certainty.
 4. **Keep the swarm moving with the proven fallback.** If `--background` is the broken path, foreground/`--wait` is the verified workaround for job-machinery faults — use it, state the degradation, don't stall the whole review on it.
@@ -199,13 +199,13 @@ Codex and Gemini join mid-project with **zero prior context**. Consistency is wh
 - **Round flow when the subject is a proposal (no/low code):** R1 = state the decision + Advisory Bundle (the proposal *is* the Round-1 artifact). R2 = each delegate produces an **independent reasoned recommendation** (not findings); the Claude pole too. **Mechanism:** advisory R2 uses the **rescue path** (Mechanism B — `Agent({subagent_type:"codex:codex-rescue"|"gemini:gemini-rescue"})` with a freeform advisory prompt), **not** `adversarial-review` (diff-based, needs `--base` — degrades/returns nothing on a no-code decision); the Claude pole is the Mechanism C subagent with the advisory prompt, not the defect reviewer template. R2.5 = cross-correlate the *positions/recommendations* (not F-IDs). R3 = Claude defends or revises its proposed X against them, with reasoning (no-shortcut still binds — §0). R4 = judge adjudicates the *argument and recommendation*, names tradeoffs and missing context. R5 = reconcile → a genuine tradeoff ⇒ **escalate to the user with all positions** (this is already correct: §4 three-way rule, G23). R6 = skip unless the decision produced an artifact/plan worth a bounded re-check.
 - **No-shortcuts & balance (advisory-aware):** still full P5b — relaying one model's opinion is the §2.3 failure. But "accuracy" here = a **calibrated recommendation with explicit uncertainty and flip-conditions**, not defect coverage; "production-ready" = the recommendation must address operational/scale/maintenance reality, not just correctness. Token balance favors advisory naturally — the bundle is decision context (lean); ship the alternatives and constraints *in full*, do not pad with non-decision-relevant code.
 
-Full flag surface, return shapes, and the `--resume` matrix: `llm-swarm_v2-references/command-appendix.md` (load on demand). [G41]
+Full flag surface, return shapes, and the `--resume` matrix: `llm-swarm-references/command-appendix.md` (load on demand). [G41]
 
 ---
 
 ## §6 — Guardrail Register (machine-auditable; the anti-silent-drop instrument)
 
-Every G must be enforced somewhere. This table is the audit instrument for the v1↔v2 comparison: if a Gn has no live enforcement location, that is a silent drop = a repeated incident.
+Every G must be enforced somewhere. This table is the audit instrument: if a Gn has no live enforcement location, that is a silent drop = a repeated incident.
 
 | G | Invariant (one line) | Enforced in |
 |---|---|---|
@@ -262,7 +262,7 @@ Only the *batch-presentation/sharding mechanics* of G8/G14/G16/G17/G37/G38/G39 l
 
 ## §7 — Playbook Index (lazy — Read only when the kernel routes you in)
 
-Each playbook is a *mechanics* file. Its header restates that Gates A–E and the Failure Algebra remain in force. Files live in `llm-swarm_v2-references/` next to this kernel.
+Each playbook is a *mechanics* file. Its header restates that Gates A–E and the Failure Algebra remain in force. Files live in `llm-swarm-references/` next to this kernel.
 
 | When the kernel routes into… | Read |
 |---|---|
@@ -282,4 +282,4 @@ If a playbook file is absent (fresh machine), the kernel still governs: announce
 
 `LAST_REVIEWED: unset` — *set this to the date you adopt or fork this skill (ISO `YYYY-MM-DD`); §1.6's staleness self-check reads it, and treats `unset` as "review now".*
 
-Codex and Gemini plugin command surfaces and model aliases shift. Re-verify against the live plugins every quarter, or when a new flagship ships, or when §1.6's staleness check fires. The full incident provenance behind every Gn (the "why") is archived in `llm-swarm_v2-references/incident-provenance.md` — provenance only; the kernel never branches on it. [G26]
+Codex and Gemini plugin command surfaces and model aliases shift. Re-verify against the live plugins every quarter, or when a new flagship ships, or when §1.6's staleness check fires. The full incident provenance behind every Gn (the "why") is archived in `llm-swarm-references/incident-provenance.md` — provenance only; the kernel never branches on it. [G26]
