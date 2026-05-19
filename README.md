@@ -98,7 +98,9 @@ Either way, you can steer the depth: *"just a quick look"* for a fast read, or *
 
 ## License
 
-See [LICENSE](./LICENSE). A license has **not** been chosen yet — the file is a placeholder. Pick one and add your name before sharing this with anyone else.
+Licensed under the **Apache License, Version 2.0** — see [LICENSE](./LICENSE). Copyright 2026 Mvizer.
+
+Apache-2.0 was chosen deliberately: it matches this skill's own discipline of explicit attribution and stated modifications, includes a patent grant, and is consistent with the Codex and Gemini plugins this skill orchestrates (both Apache-2.0).
 
 ## Under the hood (optional — you don't need this to use it)
 
